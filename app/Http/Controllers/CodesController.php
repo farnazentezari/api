@@ -18,12 +18,8 @@ class CodesController extends Controller
     }
     public function store(Request $request){
 
-        // var_dump(config('services.openai.key'));
-        // $open_ai = new OpenAI(config('services.openai.key'));
-
-        // var_dump(env('OPENAI_API_KEY'));die;
+       
         $open_ai = new OpenAi(env('OPENAI_API_KEY'));
-        // $client = OpenAI::client(env('OPENAI_API_KEY'));
         // var_dump($open_ai);die;
         if ($request->language != 'html' || $request->language == 'none') {
             $prompt = "You are a helpful assistant that writes code. Write a good code in " . $request->language . ' programming language';
