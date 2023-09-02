@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Codes;
 use App\Http\Controllers\ApiController;
-use OpenAI\Laravel\Facades\OpenAI;
+// use OpenAI\Laravel\Facades\OpenAI;
+use Orhanerday\OpenAi\OpenAi;
+
 
 
 class CodesController extends Controller
@@ -19,9 +21,10 @@ class CodesController extends Controller
         // var_dump(config('services.openai.key'));
         // $open_ai = new OpenAI(config('services.openai.key'));
 
+        // var_dump(env('OPENAI_API_KEY'));die;
+        $open_ai = new OpenAi(env('OPENAI_API_KEY'));
+        // $client = OpenAI::client(env('OPENAI_API_KEY'));
         // var_dump($open_ai);die;
-        $client = OpenAI::client(env('OPENAI_API_KEY'));
-        var_dump($client);die;
         if ($request->language != 'html' || $request->language == 'none') {
             $prompt = "You are a helpful assistant that writes code. Write a good code in " . $request->language . ' programming language';
         } elseif ($request->language == 'html') {
@@ -30,8 +33,8 @@ class CodesController extends Controller
             $prompt = "You are a helpful assistant that writes code.";
         }
        
-
-        $complete = $client->chat([
+    
+        $complete = $open_ai->chat([
             'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
@@ -48,6 +51,7 @@ class CodesController extends Controller
         ]);
 
         $response = json_decode($complete , true);
+        var_dump($response);die;
         // $response=$this->api->callApi($request->all());
         // var_dump($response);die;
         // echo json_encode($response);

@@ -9,10 +9,11 @@ class ApiController extends Controller
     //
 
 
-    public function callApi(){
+    public function callApi($data){
 
         $curl = curl_init();
 
+        // var_dump(json_encode($data));die;
         curl_setopt_array($curl, array(
         CURLOPT_URL => 'https://davinci.virmuni.com/user/code/process',
         CURLOPT_RETURNTRANSFER => true,
@@ -22,19 +23,14 @@ class ApiController extends Controller
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>'{
-            "language":"python",
-            "instructions":"cdsdsdsds",
-            "document":"new code"
-        }',
+        CURLOPT_POSTFIELDS =>json_encode($data),
         CURLOPT_HTTPHEADER => array(
-            'apiKey: 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',
             'Content-Type: application/json'
         ),
         ));
 
         $response = curl_exec($curl);
-
+        var_dump($response);die;
         curl_close($curl);
         return $response;
     }
