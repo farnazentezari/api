@@ -30,7 +30,7 @@ class CodesController extends Controller
         }
        
     
-        $complete = $open_ai->chat([
+        $req=[
             'model' => 'gpt-3.5-turbo',
             'messages' => [
                 [
@@ -44,10 +44,41 @@ class CodesController extends Controller
             ],
             'temperature' => 1,
             'max_tokens' => 3500,
-        ]);
+        ];
+        $complete = $open_ai->chat($req);
 
         $response = json_decode($complete , true);
-        var_dump($response);die;
+        // var_dump($response);die;
+        
+        if (isset($response['choices'])) {
+
+            $text = $response['choices'][0]['message']['content'];
+            $tokens = $response['usage']['total_tokens'];
+
+            // $code = new Codes();
+            // $code->lang = $request->language;
+            // $code->text = $request->instructions;
+            // $code->request = json_encode($req);
+            // $code->response = $response;
+            // $code->save();
+
+            $data['text'] = $text;
+            $data['status'] = 'success';
+            // $data['id'] = $code->id;
+
+        } else {
+
+            if (isset($response['error']['message'])) {
+                $message = $response['error']['message'];
+            } else {
+                $message = __('There is an issue with your openai account');
+            }
+
+            $data['status'] = 'error';
+            $data['message'] = $message;
+            
+        }
+         echo json_encode($data);
         // $response=$this->api->callApi($request->all());
         // var_dump($response);die;
         // echo json_encode($response);
