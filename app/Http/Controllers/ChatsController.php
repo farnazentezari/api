@@ -10,17 +10,18 @@ use Orhanerday\OpenAi\OpenAi;
 use Illuminate\Support\Str;
 
 
-
-
-class ImagesController extends Controller
+class ChatsController extends Controller
 {
     public function __construct()
     {
         $this->api = new ApiController();
     }
+    public function index(){
+
+    }
     public function store(Request $request){
 
-       
+        $request->message_code = strtoupper(Str::random(10));
         $open_ai = new OpenAi(env('OPENAI_API_KEY'));
         // var_dump($open_ai);die;
         $max_results = (int)$request->max_results;
