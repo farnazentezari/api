@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Codes;
+use App\Models\Chats;
+use App\Models\ChatHistory;
 use App\Http\Controllers\ApiController;
 // use OpenAI\Laravel\Facades\OpenAI;
 use Orhanerday\OpenAi\OpenAi;
@@ -18,111 +19,128 @@ class ChatsController extends Controller
     }
     public function index(){
 
+        $chats=Chats::all();
+
+        $data['status']="sucess";
+        $data['data']=$chats;
+        echo json_encode($data);
+
     }
     public function store(Request $request){
 
-        $request->message_code = strtoupper(Str::random(10));
-        $open_ai = new OpenAi(env('OPENAI_API_KEY'));
-        // var_dump($open_ai);die;
-        $max_results = (int)$request->max_results;
-        $plan_type = 'free';  
 
-        $prompt = $request->title;
-        
-        if ($request->style != 'none') {
-            $prompt .= ', ' . $request->style; 
-        } 
-        
-        if ($request->lightning != 'none') {
-            $prompt .= ', ' . $request->lightning; 
-        } 
-        
-        if ($request->artist != 'none') {
-            $prompt .= ', ' . $request->artist; 
-        }
-        
-        if ($request->medium != 'none') {
-            $prompt .= ', ' . $request->medium; 
-        }
-        
-        if ($request->mood != 'none') {
-            $prompt .= ', ' . $request->mood; 
-        }
-       
-    
-        $complete = $open_ai->image([
-            'prompt' => $prompt,
-            'size' => $request->resolution,
-            'n' => $max_results,
-            "response_format" => "url",
-        ]);
+        $main_chat = Chats::where('chat_code', $request->chat_code)->first();
 
-        // var_dump($complete);die;
-        $response = json_decode($complete , true);
-        if (isset($response['data'])) {
-            if (count($response['data']) > 1) {
-                foreach ($response['data'] as $key => $value) {
-                    $url = $value['url'];
+        if ($request->message_code == '') {
+            $messages = ["role"=>"system","content"=>$main_chat->prompt];            
+            $messages[] = ["role"=>"user","content"=>$request->input('message')];
 
-                    $curl = curl_init();
-                    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-                    curl_setopt($curl, CURLOPT_URL, $url);
-                    $contents = curl_exec($curl);
-                    curl_close($curl);
-
-                    $name = Str::random(10) . '.png';
-
-                    
-                    // Storage::disk('local')->put('images/' . $name, $contents);
-                    // $image_url = 'images/' . $name;
-                    // $storage = 'local';
-                    
-
-                    // $content = new Image();
-                    // $content->user_id = auth()->user()->id;
-                    // $content->name = $request->name . '-' . $key;
-                    // $content->description = $request->title;
-                    // $content->resolution = $request->resolution;
-                    // $content->image = $image_url;
-                    // $content->plan_type = $plan_type;
-                    // $content->storage = $storage;
-                    // $content->expires_at = $expiration;
-                    // $content->image_name = 'images/' . $name;
-                    // $content->save();
-                }
-            } else {
-                $url = $response['data'][0]['url'];
-
-                $curl = curl_init();
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($curl, CURLOPT_URL, $url);
-                $contents = curl_exec($curl);
-                curl_close($curl);
-
-
-
-                // $content = new Image();
-                // $content->user_id = auth()->user()->id;
-                // $content->name = $request->name;
-                // $content->description = $request->title;
-                // $content->resolution = $request->resolution;
-                // $content->image = $image_url;
-                // $content->plan_type = $plan_type;
-                // $content->storage = $storage;
-                // $content->expires_at = $expiration;
-                // $content->image_name = 'images/' . $name;
-                // $content->save();
-            }
-             $data['url']= $url;
-            $data['status'] = 'success';
-           
+            
+            $chat = new ChatHistory();
+            $chat->title = 'New Chat';
+            $chat->chat_code = $request->chat_code;
+            $chat->message_code = strtoupper(Str::random(10));
+            $chat->messages = 1;
+            $chat->chat = $messages;
+            // var_dump(json_encode($messages));die;
+            $chat->save();
         } else {
+            $chat_message = ChatHistory::where('message_code', $request->message_code)->first();
 
-            $message = $response['error']['message'];
+            if ($chat_message) {
 
-            $data['status'] = 'error';
-            $data['message'] = $message;
+                if (is_null($chat_message->chat)) {
+                    $messages[] = ['role' => 'system', 'content' => $main_chat->prompt]; 
+                } else {
+                    $messages = $chat_message->chat;
+                }
+                
+                array_push($messages, ['role' => 'user', 'content' => $request->input('message')]);
+                $chat_message->messages = ++$chat_message->messages;
+                $chat_message->chat = $messages;
+                $chat_message->save();
+            } else {
+                $messages[] = ['role' => 'system', 'content' => $main_chat->prompt];            
+                $messages[] = ['role' => 'user', 'content' => $request->input('message')];
+
+                $chat = new ChatHistory();
+                $chat->title = 'New Chat';
+                $chat->chat_code = $request->chat_code;
+                $chat->message_code = $request->message_code;
+                $chat->messages = 1;
+                $chat->chat = $messages;
+                $chat->save();
+            }
         }
-        echo json_encode($data);
+
+        session()->put('message_code', $request->message_code);
+
+        // return response()->json(['status' => 'success', 'old'=> $balance, 'current' => ($balance - $words)]);
+        
+
+        $message_code = $chat->message_code;
+
+        return response()->stream(function () use($message_code) {
+
+            $open_ai = new OpenAi(env('OPENAI_API_KEY'));
+
+            $chat_message = ChatHistory::where('message_code', $message_code)->first();
+            $messages = $chat_message->chat;
+
+            $text = "";
+
+            # Apply proper model based on role and subsciption
+            
+            $opts = [
+                'model' => 'gpt-3.5-turbo',
+                'messages' => $messages,
+                'temperature' => 1.0,
+                'frequency_penalty' => 0,
+                'presence_penalty' => 0,
+                'stream' => true
+            ];
+            
+            
+            $complete = $open_ai->chat($opts, function ($curl_info, $data) use (&$text) {
+                if ($obj = json_decode($data) and $obj->error->message != "") {
+                    error_log(json_encode($obj->error->message));
+                } else {
+                    echo $data;
+
+                    $clean = str_replace("data: ", "", $data);
+                    $first = str_replace("}\n\n{", ",", $clean);
+    
+                    if(str_contains($first, 'assistant')) {
+                        $raw = str_replace('"choices":[{"delta":{"role":"assistant"', '"random":[{"alpha":{"role":"assistant"', $first);
+                        $response = json_decode($raw, true);
+                    } else {
+                        $response = json_decode($clean, true);
+                    }    
+        
+                    if ($data != "data: [DONE]\n\n" and isset($response["choices"][0]["delta"]["content"])) {
+                        $text .= $response["choices"][0]["delta"]["content"];
+                    }
+                }
+
+                echo PHP_EOL;
+                // ob_flush();
+                // flush();
+                var_dump(strlen($data));die;
+                return strlen($data);
+            });
+
+            # Update credit balance
+            // $words = count(explode(' ', ($text)));
+            // $this->updateBalance($words);  
+            
+            array_push($messages, ['role' => 'assistant', 'content' => $text]);
+            $chat_message->messages = ++$chat_message->messages;
+            $chat_message->chat = $messages;
+            $chat_message->save();
+           
+        }, 200, [
+            'Cache-Control' => 'no-cache',
+            'Content-Type' => 'text/event-stream',
+        ]);
     }
 }

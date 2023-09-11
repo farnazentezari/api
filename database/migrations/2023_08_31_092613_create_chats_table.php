@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('codes', function (Blueprint $table) {
+        Schema::create('chats', function (Blueprint $table) {
             $table->id();
-            $table->string('lang');
-            $table->string('text');
-            $table->string('request');
-            $table->string('reponse');
+            $table->string('name');
+            $table->string('sub_name');
+            $table->string('chat_code');
+            $table->string('logo');
+            $table->string('prompt');
+            $table->string('status');
+            $table->string('description');
             $table->timestamps();
         });
     }
@@ -26,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('codes');
+        Schema::dropIfExists('chats');
     }
 };

@@ -5,14 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Codes extends Model
+class Chats extends Model
 {
     use HasFactory;
-    protected $table = "codes";
+    protected $table = "chats";
     protected $fillable = [
-        'lang',
-        'text',
-        'request',
-        'response'
+        'name',
+        'sub_name',
+        'logo',
+        'prompt',
+        'status',
+        'description'
     ];
 }

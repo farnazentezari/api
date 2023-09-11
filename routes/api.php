@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::post('/codes',[CodesController::class,'store']);
 Route::post('/images',[ImagesController::class,'store']);
-Route::post('/chatlists',[ChatsController::class,'index']);
+Route::get('/chatlists',[ChatsController::class,'index']);
 Route::post('/chats',[ChatsController::class,'store']);
 
 
