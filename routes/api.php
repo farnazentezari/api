@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CodesController;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ChatsController;
+use App\Http\Controllers\VoiceController;
+
 use Illuminate\Support\Str;
 
 
@@ -27,6 +29,10 @@ Route::post('/codes',[CodesController::class,'store']);
 Route::post('/images',[ImagesController::class,'store']);
 Route::get('/chatlists',[ChatsController::class,'index']);
 Route::post('/chats',[ChatsController::class,'store']);
+Route::get('/getlanguage',[VoiceController::class,'getlanguage']);
+Route::post('/getaccountvoice',[VoiceController::class,'getaccountvoice']);
+
+
 
 
 
